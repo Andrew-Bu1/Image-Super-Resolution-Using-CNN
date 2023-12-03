@@ -3,8 +3,29 @@ import torch.nn as nn
 
 
 class SRCNN(nn.Module):
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self):
+        super(SRCNN, self).__init__()
+        # The first convolutional layer with 9x9 kernel and 64 feature maps
+        self.conv1 = nn.Conv2d(
+            in_channels=3, out_channels=64, kernel_size=9, padding=4)
+        # The second convolutional layer with 1x1 kernel and 32 feature maps
+        self.conv2 = nn.Conv2d(
+            in_channels=64, out_channels=32, kernel_size=1, padding=0)
+        # The third convolutional layer with 5x5 kernel and 3 feature maps
+        self.conv3 = nn.Conv2d(
+            in_channels=32, out_channels=3, kernel_size=5, padding=2)
+        # The ReLU activation function
+        self.relu = nn.ReLU()
+
+    def forward(self, x):
+        # Apply the first convolutional layer and ReLU
+        x = self.relu(self.conv1(x))
+        # Apply the second convolutional layer and ReLU
+        x = self.relu(self.conv2(x))
+        # Apply the third convolutional layer
+        x = self.conv3(x)
+        # Return the output
+        return x
 
     def run_train(self, **kwargs):
         print("Model in training, with args: {}".format(kwargs))
