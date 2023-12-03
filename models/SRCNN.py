@@ -10,7 +10,7 @@ class SRCNN(nn.Module):
             in_channels=3, out_channels=64, kernel_size=9, padding=4)
         # The second convolutional layer with 1x1 kernel and 32 feature maps
         self.conv2 = nn.Conv2d(
-            in_channels=64, out_channels=32, kernel_size=1, padding=0)
+            in_channels=64, out_channels=32, kernel_size=1)
         # The third convolutional layer with 5x5 kernel and 3 feature maps
         self.conv3 = nn.Conv2d(
             in_channels=32, out_channels=3, kernel_size=5, padding=2)
