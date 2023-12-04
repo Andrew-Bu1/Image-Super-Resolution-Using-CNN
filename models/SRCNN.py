@@ -3,8 +3,8 @@ import torch.nn as nn
 
 
 class SRCNN(nn.Module):
-    def __init__(self):
-        super(SRCNN, self).__init__()
+    def __init__(self, mode=None, model_dir=None, config=None):
+        super().__init__()
         # The first convolutional layer with 9x9 kernel and 64 feature maps
         self.conv1 = nn.Conv2d(
             in_channels=3, out_channels=64, kernel_size=9, padding=4)
@@ -26,6 +26,9 @@ class SRCNN(nn.Module):
         x = self.conv3(x)
         # Return the output
         return x
+
+    def train_step():
+        return
 
     def run_train(self, **kwargs):
         print("Model in training, with args: {}".format(kwargs))
