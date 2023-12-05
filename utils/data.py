@@ -22,10 +22,10 @@ def crop_image(image_path: str):
     image_croppedPath = image_path.split('/')[-1]
     with Image.open(image_path) as img:
         width, height = img.size
-        left = (width - 400)/2
-        top = (height - 400)/2
-        right = (width + 400)/2
-        bottom = (height + 400)/2
+        left = (width - 800)/2
+        top = (height - 800)/2
+        right = (width + 800)/2
+        bottom = (height + 800)/2
 
         img_cropped = img.crop((left, top, right, bottom))
         img_cropped.save(image_croppedPath)

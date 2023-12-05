@@ -1,0 +1,13 @@
+data:
+  train_data_location: data/train
+  eval_data_location:  data/test
+lr: 0.001
+device: cuda
+optimizer: Adam
+optimizer_params:
+  betas:
+    - 0.9 # beta1
+    - 0.98 # beta2
+  eps: !!float 1e-9
+batch_size: 64
+epochs: 20
