@@ -40,7 +40,7 @@ print(crop_image('utils/0900.png'))
 def proccess_image():
 
     # Define the data folder path
-    data_folder = Path("data/DIV2K")
+    data_folder = "data/DIV2K"
 
     # Get all image files recursively
     for image_file in data_folder.rglob("*.png"):
@@ -49,6 +49,7 @@ def proccess_image():
         image_path = str(image_file)
         crop_image(image_path)
         downsize_upsize_image(image_path)
+    os.remove("*.png")
     print("Image are Processed")
 
 
