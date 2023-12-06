@@ -2,11 +2,15 @@ import torch
 import torch.nn as nn
 
 from utils.data import sort_image, proccess_image
+from modules import constants as const
 
 
 class SRCNN(nn.Module):
     def __init__(self, mode=None, model_dir=None):
         super().__init__()
+
+        self.device = const.DEFAULT_DEVICE
+        self.to(self.device)
 
         # The first convolutional layer with 9x9 kernel and 64 feature maps
         self.conv1 = nn.Conv2d(
@@ -34,7 +38,20 @@ class SRCNN(nn.Module):
         proccess_image()
         sort_image()
 
-        print("Model in training, with args: {}".format(kwargs))
+        model = SRCNN()
+        criterion = nn.MSELoss()
+        optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
-    def run_eval(self, **kwargs):
-        print("Model in evaluation, with args: {}".format(kwargs))
+        for epoch in range(const.DEFAULT_EPOCHS):  # 50 epochs
+            # for batch in train_loader:
+            #     low_res_images, high_res_images = batch
+
+            #     # Forward pass
+            #     outputs = model(low_res_images)
+            #     loss = criterion(outputs, high_res_images)
+
+            #     # Backward pass and optimization
+            #     optimizer.zero_grad()
+            #     loss.backward()
+            #     optimizer.step()
+            print("Model in training, with args: {}".format(kwargs))

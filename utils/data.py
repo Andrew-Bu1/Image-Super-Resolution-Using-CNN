@@ -34,9 +34,6 @@ def crop_image(image_path: str):
     return image_path
 
 
-print(crop_image('utils/0900.png'))
-
-
 def proccess_image():
 
     # Define the data folder path
@@ -51,17 +48,6 @@ def proccess_image():
         downsize_upsize_image(image_path)
 
     print("Image are Processed")
-
-
-def remove_image():
-
-    data_folder = Path(const.DEFAULT_DATASET_PATH)
-    for file in data_folder.rglob("*.png"):
-        try:
-            os.remove(file)
-            print(f'Successfully deleted {file}')
-        except OSError as e:
-            print(f'Error: {file} : {e.strerror}')
 
 
 def sort_image():
@@ -100,5 +86,4 @@ def sort_image():
         for filename in val_images:
             shutil.copy(os.path.join(data_folder, filename),
                         os.path.join(val_folder, filename))
-    remove_image()
     print("Images successfully allocated!")
