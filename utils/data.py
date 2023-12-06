@@ -40,7 +40,7 @@ print(crop_image('utils/0900.png'))
 def proccess_image():
 
     # Define the data folder path
-    data_folder = Path("data/DIV2K")
+    data_folder = Path(const.DEFAULT_DATASET_PATH)
 
     # Get all image files recursively
     for image_file in data_folder.rglob("*.png"):
@@ -49,17 +49,28 @@ def proccess_image():
         image_path = str(image_file)
         crop_image(image_path)
         downsize_upsize_image(image_path)
-    os.remove("*.png")
+
     print("Image are Processed")
+
+
+def remove_image():
+
+    data_folder = Path(const.DEFAULT_DATASET_PATH)
+    for file in data_folder.rglob("*.png"):
+        try:
+            os.remove(file)
+            print(f'Successfully deleted {file}')
+        except OSError as e:
+            print(f'Error: {file} : {e.strerror}')
 
 
 def sort_image():
 
     # Define the data folder path and subfolders
-    data_folder = "data/DIV2K"
-    train_folder = "data/DIV2K/train"
-    test_folder = "data/DIV2K/test"
-    val_folder = "data/DIV2K/validation"
+    data_folder = const.DEFAULT_DATASET_PATH
+    train_folder = const.DEFAULT_TRAIN_PATH
+    test_folder = const.DEFAULT_TEST_PATH
+    val_folder = const.DEFAULT_VALIDATION_DATASET
 
     # Get all image filenames in the DIV2K folder
     image_filenames = sorted(os.listdir(data_folder))
@@ -89,5 +100,5 @@ def sort_image():
         for filename in val_images:
             shutil.copy(os.path.join(data_folder, filename),
                         os.path.join(val_folder, filename))
-
+    remove_image()
     print("Images successfully allocated!")
