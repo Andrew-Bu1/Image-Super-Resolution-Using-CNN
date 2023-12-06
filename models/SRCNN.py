@@ -31,8 +31,8 @@ class SRCNN(nn.Module):
         return x
 
     def run_train(self, **kwargs):
+        proccess_image()
         sort_image()
-        # proccess_image()
 
         print("Model in training, with args: {}".format(kwargs))
 

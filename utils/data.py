@@ -14,7 +14,7 @@ def resize_image(image_path: str, scale):
     return image_path
 
 
-def downsize_upsize_image(image_path: str, scale):
+def downsize_upsize_image(image_path: str, scale=2):
     scaled = resize_image(image_path, 1 / scale)
     scaled = resize_image(scaled, scale)
     return scaled
@@ -49,15 +49,16 @@ def proccess_image():
         image_path = str(image_file)
         crop_image(image_path)
         downsize_upsize_image(image_path)
+    print("Image are Processed")
 
 
 def sort_image():
 
-    # ` Define the data folder path and subfolders
+    # Define the data folder path and subfolders
     data_folder = "data/DIV2K"
-    train_folder = "data/train"
-    test_folder = "data/test"
-    val_folder = "data/validation"
+    train_folder = "data/DIV2K/train"
+    test_folder = "data/DIV2K/test"
+    val_folder = "data/DIV2K/validation"
 
     # Get all image filenames in the DIV2K folder
     image_filenames = sorted(os.listdir(data_folder))
@@ -88,4 +89,4 @@ def sort_image():
             shutil.copy(os.path.join(data_folder, filename),
                         os.path.join(val_folder, filename))
 
-    print("Images successfully copied!")
+    print("Images successfully allocated!")
