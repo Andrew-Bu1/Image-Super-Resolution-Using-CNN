@@ -40,7 +40,7 @@ print(crop_image('utils/0900.png'))
 def proccess_image():
 
     # Define the data folder path
-    data_folder = "data/DIV2K"
+    data_folder = Path("data/DIV2K")
 
     # Get all image files recursively
     for image_file in data_folder.rglob("*.png"):
