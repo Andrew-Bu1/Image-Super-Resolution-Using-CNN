@@ -51,7 +51,7 @@ def proccess_image():
         downsize_upsize_image(image_path)
 
 
-def sort_image(number_):
+def sort_image():
 
     # ` Define the data folder path and subfolders
     data_folder = "data/DIV2K"
@@ -62,32 +62,30 @@ def sort_image(number_):
     # Get all image filenames in the DIV2K folder
     image_filenames = sorted(os.listdir(data_folder))
 
-    # Pick the first 60 images for train
-    train_images = image_filenames[:const.DEFAULT_TRAIN_DATASET]
+    train_end = const.DEFAULT_TRAIN_DATASET
+    test_end = const.DEFAULT_TEST_DATASET + train_end
+    # Pick the first TRAIN_DATASET images for train
+    train_images = image_filenames[: train_end]
 
-    # Copy the first 20 images to test and validation folders
-    test_images = train_images[:const.DEFAULT_TEST_DATASET]
-    val_images = train_images[:const.DEFAULT_VALIDATION_DATASET]
+    # Copy the remaining images to test and validation folders
+    test_images = image_filenames[train_end:test_end]
+    val_images = image_filenames[test_end:]
 
-    # Create folders if they don't exist
+    # Create folders if they don't exist and copy images to respective folders
     if not os.path.exists(train_folder):
         os.makedirs(train_folder)
+        for filename in train_images:
+            shutil.copy(os.path.join(data_folder, filename),
+                        os.path.join(train_folder, filename))
     if not os.path.exists(test_folder):
         os.makedirs(test_folder)
+        for filename in test_images:
+            shutil.copy(os.path.join(data_folder, filename),
+                        os.path.join(test_folder, filename))
     if not os.path.exists(val_folder):
         os.makedirs(val_folder)
-
-    # Copy images to respective folders
-    for filename in train_images:
-        shutil.copy(os.path.join(data_folder, filename),
-                    os.path.join(train_folder, filename))
-
-    for filename in test_images:
-        shutil.copy(os.path.join(data_folder, filename),
-                    os.path.join(test_folder, filename))
-
-    for filename in val_images:
-        shutil.copy(os.path.join(data_folder, filename),
-                    os.path.join(val_folder, filename))
+        for filename in val_images:
+            shutil.copy(os.path.join(data_folder, filename),
+                        os.path.join(val_folder, filename))
 
     print("Images successfully copied!")
