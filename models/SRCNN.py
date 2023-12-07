@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 from modules import constants as const
-import matplotlib as plt
+import matplotlib.pyplot as plt
 from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import DataLoader
 from utils.metric import calculate_psnr
@@ -89,8 +89,25 @@ class SRCNN(nn.Module):
                 # Accumulate training loss
                 train_loss += loss.item()
 
-            # Evaluate model after each epoch
-            val_loss = self.eval(val_loader, criterion)
+            # Switch to evaluation mode
+            model.eval()
+
+            # Calculate validation loss
+            val_loss = 0
+            with torch.no_grad():
+                for i, (low_image_resource, high_image_resource) in enumerate(val_loader):
+                    # Move data to device
+                    low_image_resource = low_image_resource.to(device)
+                    high_image_resource = high_image_resource.to(device)
+
+                    # Forward pass and calculate loss
+                    outputs = model(low_image_resource)
+                    loss = criterion(outputs, high_image_resource)
+
+                    # Accumulate validation loss
+                    val_loss += loss.item()
+
+            val_loss /= len(val_loader)
 
             # Track and print epoch-wise losses and write to TensorBoard
             train_loss_list.append(train_loss/len(train_loader))
@@ -101,10 +118,9 @@ class SRCNN(nn.Module):
                 f"Train Loss: {train_loss_list[-1]}, Val Loss: {val_loss_list[-1]}")
 
             # Plot training and validation losses
-            plt.plot(range(1, const.DEFAULT_EPOCHS+1),
-                     train_loss_list, label="Train Loss")
-            plt.plot(range(1, const.DEFAULT_EPOCHS+1),
-                     val_loss_list, label="Validation Loss")
+            epochs = range(1, len(train_loss_list) + 1)
+            plt.plot(epochs, train_loss_list, label="Train Loss")
+            plt.plot(epochs, val_loss_list, label="Validation Loss")
             plt.legend()
             plt.xlabel("Number of epochs")
             plt.ylabel("Loss")
