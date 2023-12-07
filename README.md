@@ -1,9 +1,9 @@
 # Image-Super-Resolution-Using-CNN
 
-## Bước 1: Chuẩn bị dữ liệu
+## Step 1: Prepare the dataset
 
 
-## Bước 2: Huấn luyện mô hình
+## Step 2: Train the Model
 ```bash
 python -m bin.main train --model SRCNN --model_dir $MODEL/en-vi.model 
 ```
