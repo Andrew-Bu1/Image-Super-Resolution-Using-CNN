@@ -117,14 +117,15 @@ class SRCNN(nn.Module):
             print(
                 f"Train Loss: {train_loss_list[-1]}, Val Loss: {val_loss_list[-1]}")
 
-            # Plot training and validation losses
-            epochs = range(1, len(train_loss_list) + 1)
-            plt.plot(epochs, train_loss_list, label="Train Loss")
-            plt.plot(epochs, val_loss_list, label="Validation Loss")
-            plt.legend()
-            plt.xlabel("Number of epochs")
-            plt.ylabel("Loss")
-            plt.show()
+        plt.plot(range(1, len(train_loss_list) + 1),
+                 train_loss_list, label="Train Loss")
+        plt.plot(range(1, len(val_loss_list) + 1),
+                 val_loss_list, label="Validation Loss")
+        plt.legend()
+        plt.xlabel("Number of epochs")
+        plt.ylabel("Loss")
+        plt.savefig('loss_plot.png')
+        plt.close()
 
     def run_eval(self, data_loader, criterion):
 
