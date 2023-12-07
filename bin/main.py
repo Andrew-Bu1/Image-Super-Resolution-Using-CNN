@@ -1,8 +1,6 @@
 import models
 import argparse
 import os
-from shutil import copy2 as copy
-from modules.config import find_all_config
 
 
 def check_valid_file(path):

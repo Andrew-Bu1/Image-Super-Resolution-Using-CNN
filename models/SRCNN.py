@@ -10,7 +10,7 @@ from utils.data import SRDataset
 
 
 class SRCNN(nn.Module):
-    def __init__(self, mode=None, model_dir=None):
+    def __init__(self):
         super().__init__()
 
         # The first convolutional layer with 9x9 kernel and 64 feature maps
@@ -43,9 +43,9 @@ class SRCNN(nn.Module):
 
         # Create training and validation datasets
         train_data = SRDataset(lr_image_dir, hr_image_dir,
-                               scale=const.DEFAULT_SCALE)
+                               scale=const.DEFAULT_IMAGE_SCALE)
         val_data = SRDataset(lr_image_dir, hr_image_dir,
-                             scale=const.DEFAULT_SCALE)
+                             scale=const.DEFAULT_IMAGE_SCALE)
 
         # Create data loaders
         train_loader = DataLoader(
@@ -113,7 +113,7 @@ class SRCNN(nn.Module):
         plt.ylabel("Loss")
         plt.show()
 
-    def eval(self, data_loader, criterion):
+    def run_eval(self, data_loader, criterion):
 
         # Set model to evaluation mode
         self.eval()
