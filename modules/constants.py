@@ -10,3 +10,4 @@ DEFAULT_TRAIN_PATH = "data/Low_Resource/train"
 DEFAULT_TEST_PATH = "data/Low_Resource/test"
 DEFAULT_VALIDATION_DATASET = "data/Low_Resource/validation"
 DEFAULT_EPOCHS = 50
+DEFAULT_BATCH_SIZE = 32

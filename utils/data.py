@@ -4,6 +4,8 @@ import os
 from pathlib import Path
 import shutil
 from modules import constants as const
+from torch.utils.data import DataLoader
+from torchvision import datasets, transforms
 
 
 def resize_image(image_path: str, scale):
@@ -87,3 +89,15 @@ def sort_image():
             shutil.copy(os.path.join(data_folder, filename),
                         os.path.join(val_folder, filename))
     print("Images successfully allocated!")
+
+
+def data_loader(image_folderPath):
+    transforms = transforms.Compose([
+        transforms.ToTensor()
+    ])
+
+    folder_transform = datasets.ImageFolder(
+        image_folderPath, transform=transforms)
+    data_loaded = DataLoader(
+        folder_transform, batch_size=const.DEFAULT_BATCH_SIZE, shuffle=True)
+    return data_loaded
