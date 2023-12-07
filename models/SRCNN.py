@@ -35,8 +35,8 @@ class SRCNN(nn.Module):
         return x
 
     def run_train(self, **kwargs):
-        proccess_image()
         sort_image()
+        proccess_image(const.DEFAULT_TRAIN_PATH)
 
         model = SRCNN()
         criterion = nn.MSELoss()

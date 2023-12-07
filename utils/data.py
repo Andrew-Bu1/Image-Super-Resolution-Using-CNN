@@ -36,10 +36,10 @@ def crop_image(image_path: str):
     return image_path
 
 
-def proccess_image():
+def proccess_image(folder_path):
 
     # Define the data folder path
-    data_folder = Path(const.DEFAULT_DATASET_PATH)
+    data_folder = Path(folder_path)
 
     # Get all image files recursively
     for image_file in data_folder.rglob("*.png"):
@@ -92,12 +92,12 @@ def sort_image():
 
 
 def data_loader(image_folderPath):
-    transforms = transforms.Compose([
+    transformation = transforms.Compose([
         transforms.ToTensor()
     ])
 
     folder_transform = datasets.ImageFolder(
-        image_folderPath, transform=transforms)
+        image_folderPath, transformation)
     data_loaded = DataLoader(
         folder_transform, batch_size=const.DEFAULT_BATCH_SIZE, shuffle=True)
     return data_loaded
