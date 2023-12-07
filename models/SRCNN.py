@@ -10,7 +10,7 @@ from utils.data import SRDataset
 
 
 class SRCNN(nn.Module):
-    def __init__(self):
+    def __init__(self,  mode=None, model_dir=None):
         super().__init__()
 
         # The first convolutional layer with 9x9 kernel and 64 feature maps
@@ -42,10 +42,8 @@ class SRCNN(nn.Module):
             "hr_image_dir") is None else kwargs["hr_image_dir"]
 
         # Create training and validation datasets
-        train_data = SRDataset(lr_image_dir, hr_image_dir,
-                               scale=const.DEFAULT_IMAGE_SCALE)
-        val_data = SRDataset(lr_image_dir, hr_image_dir,
-                             scale=const.DEFAULT_IMAGE_SCALE)
+        train_data = SRDataset(lr_image_dir, hr_image_dir)
+        val_data = SRDataset(lr_image_dir, hr_image_dir)
 
         # Create data loaders
         train_loader = DataLoader(
@@ -54,7 +52,8 @@ class SRCNN(nn.Module):
             val_data, batch_size=const.DEFAULT_BATCH_SIZE, shuffle=False)
 
         # Move model to device
-        model = self.to(device=const.DEFAULT_DEVICE)
+        device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        model = self.to(device)
 
         # Initialize optimizer and loss function
         optimizer = torch.optim.Adam(
@@ -75,10 +74,8 @@ class SRCNN(nn.Module):
             # Training loop
             for i, (low_image_resource, high_image_resource) in enumerate(train_loader):
                 # Move data to device
-                low_image_resource = low_image_resource.to(
-                    const.DEFAULT_DEVICE)
-                high_image_resource = high_image_resource.to(
-                    const.DEFAULT_DEVICE)
+                low_image_resource = low_image_resource.to(device)
+                high_image_resource = high_image_resource.to(device)
 
                 # Forward pass and calculate loss
                 outputs = model(low_image_resource)
@@ -103,28 +100,30 @@ class SRCNN(nn.Module):
             print(
                 f"Train Loss: {train_loss_list[-1]}, Val Loss: {val_loss_list[-1]}")
 
-        # Plot training and validation losses
-        plt.plot(range(1, const.DEFAULT_EPOCHS+1),
-                 train_loss_list, label="Train Loss")
-        plt.plot(range(1, const.DEFAULT_EPOCHS+1),
-                 val_loss_list, label="Validation Loss")
-        plt.legend()
-        plt.xlabel("Number of epochs")
-        plt.ylabel("Loss")
-        plt.show()
+            # Plot training and validation losses
+            plt.plot(range(1, const.DEFAULT_EPOCHS+1),
+                     train_loss_list, label="Train Loss")
+            plt.plot(range(1, const.DEFAULT_EPOCHS+1),
+                     val_loss_list, label="Validation Loss")
+            plt.legend()
+            plt.xlabel("Number of epochs")
+            plt.ylabel("Loss")
+            plt.show()
 
     def run_eval(self, data_loader, criterion):
 
         # Set model to evaluation mode
         self.eval()
-        model = self.to(device=const.DEFAULT_DEVICE)
+        model = self.to(device=torch.device("cuda"))
 
         total_loss = 0
         total_psnr = 0
         for i, (low_image_resource, high_image_resource) in enumerate(data_loader):
             # Move data to device
-            low_image_resource = low_image_resource.to(const.DEFAULT_DEVICE)
-            high_image_resource = high_image_resource.to(const.DEFAULT_DEVICE)
+            low_image_resource = low_image_resource.to(
+                device=torch.device("cuda"))
+            high_image_resource = high_image_resource.to(
+                device=torch.device("cuda"))
 
             # Forward pass and calculate loss
             outputs = model(low_image_resource)
