@@ -10,7 +10,7 @@ from utils.data import SRDataset
 
 
 class SRCNN(nn.Module):
-    def __init__(self,  mode=None, model_dir=None):
+    def __init__(self, mode=None, model_dir=None):
         super().__init__()
 
         # The first convolutional layer with 9x9 kernel and 64 feature maps
