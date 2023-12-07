@@ -130,7 +130,7 @@ class SRCNN(nn.Module):
         plt.close()
         torch.save(model.state_dict(), 'models/SRCNN.model/trained_model.pth')
 
-    def run_eval(self):
+    def run_eval(self, **kwargs):
         # Set model to evaluation mode
         self.eval()
 
