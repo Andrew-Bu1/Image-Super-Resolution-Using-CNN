@@ -4,12 +4,13 @@ from PIL import Image
 from torch.utils.data import Dataset
 import numpy as np
 
+
 class SRDataset(Dataset):
     def __init__(self, lr_dir, hr_dir):
         self.lr_dir = lr_dir
         self.hr_dir = hr_dir
-        self.lr_image_files = os.listdir(lr_dir)
-        self.hr_image_files = os.listdir(hr_dir)
+        self.lr_image_files = sorted(os.listdir(lr_dir))
+        self.hr_image_files = sorted(os.listdir(hr_dir))
 
     def __len__(self):
         return len(self.lr_image_files)

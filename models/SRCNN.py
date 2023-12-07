@@ -7,6 +7,7 @@ from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import DataLoader
 from utils.metric import calculate_psnr
 from utils.data import SRDataset
+import os
 
 
 class SRCNN(nn.Module):
@@ -15,13 +16,13 @@ class SRCNN(nn.Module):
 
         # The first convolutional layer with 9x9 kernel and 64 feature maps
         self.conv1 = nn.Conv2d(
-            in_channels=3, out_channels=64, kernel_size=9, padding=4)
+            in_channels=3, out_channels=64, kernel_size=9, padding=(9 - 1) // 2)
         # The second convolutional layer with 1x1 kernel and 32 feature maps
         self.conv2 = nn.Conv2d(
             in_channels=64, out_channels=32, kernel_size=1)
         # The third convolutional layer with 5x5 kernel and 3 feature maps
         self.conv3 = nn.Conv2d(
-            in_channels=32, out_channels=3, kernel_size=5, padding=2)
+            in_channels=32, out_channels=3, kernel_size=5, padding=(5 - 1)//2)
         # The ReLU activation function
         self.relu = nn.ReLU()
 
@@ -38,18 +39,19 @@ class SRCNN(nn.Module):
     def run_train(self, **kwargs):
         # Define image paths and data directories
         lr_image_dir = const.DEFAULT_LOW_RESOURCE_PATH
-        hr_image_dir = const.DEFAULT_HIGH_RESOURCE_PATH if kwargs.get(
-            "hr_image_dir") is None else kwargs["hr_image_dir"]
+        hr_image_dir = const.DEFAULT_HIGH_RESOURCE_PATH
 
         # Create training and validation datasets
-        train_data = SRDataset(lr_image_dir, hr_image_dir)
-        val_data = SRDataset(lr_image_dir, hr_image_dir)
+        train_data = SRDataset(os.path.join(
+            lr_image_dir, "train"), os.path.join(hr_image_dir, "train"))
+        val_data = SRDataset(os.path.join(
+            lr_image_dir, "validation"), os.path.join(hr_image_dir, "validation"))
 
         # Create data loaders
         train_loader = DataLoader(
-            train_data, batch_size=const.DEFAULT_BATCH_SIZE, shuffle=True)
+            train_data, batch_size=const.DEFAULT_BATCH_SIZE)
         val_loader = DataLoader(
-            val_data, batch_size=const.DEFAULT_BATCH_SIZE, shuffle=False)
+            val_data, batch_size=const.DEFAULT_BATCH_SIZE)
 
         # Move model to device
         device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -126,16 +128,29 @@ class SRCNN(nn.Module):
         plt.ylabel("Loss")
         plt.savefig('loss_plot.png')
         plt.close()
+        torch.save(model.state_dict(), 'models/SRCNN.model/trained_model.pth')
 
-    def run_eval(self, data_loader, criterion):
-
+    def run_eval(self):
         # Set model to evaluation mode
         self.eval()
+
+        # Load the saved model
         model = self.to(device=torch.device("cuda"))
+        model.load_state_dict(torch.load(
+            'models/SRCNN.model/trained_model.pth'))
+
+        criterion = nn.MSELoss()
+
+        test_data = SRDataset(os.path.join(
+            const.DEFAULT_LOW_RESOURCE_PATH, "test"), os.path.join(const.DEFAULT_HIGH_RESOURCE_PATH, "test"))
+
+        # Create data loaders
+        test_loader = DataLoader(
+            test_data, batch_size=const.DEFAULT_BATCH_SIZE)
 
         total_loss = 0
         total_psnr = 0
-        for i, (low_image_resource, high_image_resource) in enumerate(data_loader):
+        for i, (low_image_resource, high_image_resource) in enumerate(test_loader):
             # Move data to device
             low_image_resource = low_image_resource.to(
                 device=torch.device("cuda"))
@@ -151,6 +166,6 @@ class SRCNN(nn.Module):
             total_loss += loss.item()
             total_psnr += psnr.item()
         # Calculate and return average loss
-        avg_loss = total_loss / len(data_loader)
-        avg_psnr = total_psnr / len(data_loader)
-        return avg_loss, avg_psnr
+        avg_loss = total_loss / len(test_loader)
+        avg_psnr = total_psnr / len(test_loader)
+        print(avg_loss + " " + avg_psnr)
