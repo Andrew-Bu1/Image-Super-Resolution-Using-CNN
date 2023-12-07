@@ -1,103 +1,93 @@
-import numpy as np
 from PIL import Image
+import torch
 import os
-from pathlib import Path
-import shutil
-from modules import constants as const
-from torch.utils.data import DataLoader
-from torchvision import datasets, transforms
+from torch.utils.data import Dataset
 
 
-def resize_image(image_path: str, scale):
+def process_image(image_path: str, scale=2, batch_size=32):
+    """
+    Processes an image and extracts batches for training.
+
+    Args:
+        image_path: Path to the image.
+        scale: Scaling factor for downsampling.
+        batch_size: Number of batches to extract.
+
+    Returns:
+        A tuple of tensors containing LR and HR batches.
+    """
     with Image.open(image_path) as img:
-        image_resize = img.resize(
-            (int(img.width * scale), int(img.height * scale)))
-        image_resize.save(image_path)
-    return image_path
+        # Get the original image dimensions
+        original_width, original_height = img.size
+
+        # Calculate scaling factor based on target size
+        if original_width > original_height:
+            scale = batch_size / original_width
+        else:
+            scale = batch_size / original_height
+
+        # Resize the image with downscaling
+        img_resized = img.resize(
+            (int(original_width * scale), int(original_height * scale)))
+
+        # Create a copy for original HR
+        img_hr = img.copy()
+
+        # Extract batches
+        lr_batches, hr_batches = [], []
+        for i in range(0, img_resized.shape[0] - batch_size + 1, batch_size):
+            for j in range(0, img_resized.shape[1] - batch_size + 1, batch_size):
+                # Convert to tensors
+                lr_batch_tensor = torch.from_numpy(
+                    img_resized[i:i + batch_size, j:j + batch_size]).float()
+                hr_batch_tensor = torch.from_numpy(
+                    img_hr[i:i + batch_size, j:j + batch_size]).float()
+
+                lr_batches.append(lr_batch_tensor)
+                hr_batches.append(hr_batch_tensor)
+
+        lr_batches_batch = torch.stack(lr_batches[:batch_size])
+        hr_batches_batch = torch.stack(hr_batches[:batch_size])
+
+    return lr_batches_batch, hr_batches_batch
 
 
-def downsize_upsize_image(image_path: str, scale=2):
-    scaled = resize_image(image_path, 1 / scale)
-    scaled = resize_image(scaled, scale)
-    return scaled
+class SRDataset(Dataset):
+    """
+    Dataset class for loading and processing image pairs for SR training.
 
+    Args:
+        image_dir: Directory containing LR images.
+        hr_image_dir: Directory containing HR images (optional).
+        scale: Scaling factor for downsampling.
+        batch_size: Number of batches to extract.
+    """
 
-def crop_image(image_path: str):
-    with Image.open(image_path) as img:
-        width, height = img.size
-        left = (width - 800)/2
-        top = (height - 800)/2
-        right = (width + 800)/2
-        bottom = (height + 800)/2
+    def __init__(self, image_dir, hr_image_dir=None, scale=2, batch_size=32):
+        self.image_dir = image_dir
+        self.hr_image_dir = hr_image_dir
+        self.scale = scale
+        self.batch_size = batch_size
+        self.image_paths = os.listdir(image_dir)
 
-        img_cropped = img.crop((left, top, right, bottom))
-        img_cropped.save(image_path)
+        if not hr_image_dir:
+            self.hr_image_paths = self.image_paths
+        else:
+            self.hr_image_paths = os.listdir(hr_image_dir)
 
-    return image_path
+    def __getitem__(self, index):
+        low_image_path = os.path.join(self.image_dir, self.image_paths[index])
+        high_image_path = os.path.join(
+            self.hr_image_dir, self.hr_image_paths[index])
 
+        try:
+            low_patch_tensor, high_patch_tensor = process_image(
+                low_image_path, scale=self.scale, batch_size=self.batch_size)
+        except Exception as e:
+            print(f"Error loading image {low_image_path}: {e}")
+            raise
 
-def proccess_image(folder_path):
+        return low_patch_tensor, high_patch_tensor
 
-    # Define the data folder path
-    data_folder = Path(folder_path)
-
-    # Get all image files recursively
-    for image_file in data_folder.rglob("*.png"):
-
-        # Convert Path object to string for script execution
-        image_path = str(image_file)
-        crop_image(image_path)
-        downsize_upsize_image(image_path)
-
-    print("Image are Processed")
-
-
-def sort_image():
-
-    # Define the data folder path and subfolders
-    data_folder = const.DEFAULT_DATASET_PATH
-    train_folder = const.DEFAULT_TRAIN_PATH
-    test_folder = const.DEFAULT_TEST_PATH
-    val_folder = const.DEFAULT_VALIDATION_DATASET
-
-    # Get all image filenames in the DIV2K folder
-    image_filenames = sorted(os.listdir(data_folder))
-
-    train_end = const.DEFAULT_TRAIN_DATASET
-    test_end = const.DEFAULT_TEST_DATASET + train_end
-    # Pick the first TRAIN_DATASET images for train
-    train_images = image_filenames[: train_end]
-
-    # Copy the remaining images to test and validation folders
-    test_images = image_filenames[train_end:test_end]
-    val_images = image_filenames[test_end:]
-
-    # Create folders if they don't exist and copy images to respective folders
-    if not os.path.exists(train_folder):
-        os.makedirs(train_folder)
-        for filename in train_images:
-            shutil.copy(os.path.join(data_folder, filename),
-                        os.path.join(train_folder, filename))
-    if not os.path.exists(test_folder):
-        os.makedirs(test_folder)
-        for filename in test_images:
-            shutil.copy(os.path.join(data_folder, filename),
-                        os.path.join(test_folder, filename))
-    if not os.path.exists(val_folder):
-        os.makedirs(val_folder)
-        for filename in val_images:
-            shutil.copy(os.path.join(data_folder, filename),
-                        os.path.join(val_folder, filename))
-    print("Images successfully allocated!")
-
-
-def data_loader(image_folderPath):
-    transformation = transforms.Compose([
-        transforms.ToTensor()
-    ])
-
-    folder_transform = datasets.ImageFolder(
-        image_folderPath, transformation)
-    data_loaded = DataLoader(
-        folder_transform, batch_size=const.DEFAULT_BATCH_SIZE, shuffle=True)
-    return data_loaded
+    def __len__(self):
+        return len(self.image_paths) // self.batch_size

@@ -1,16 +1,17 @@
 import torch
 import torch.nn as nn
 
-from utils.data import sort_image, proccess_image, data_loader
 from modules import constants as const
+import matplotlib as plt
+from torch.utils.tensorboard import SummaryWriter
+from torch.utils.data import DataLoader
+from utils.metric import calculate_psnr
+from utils.data import SRDataset
 
 
 class SRCNN(nn.Module):
     def __init__(self, mode=None, model_dir=None):
         super().__init__()
-
-        device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-        self.to(device)
 
         # The first convolutional layer with 9x9 kernel and 64 feature maps
         self.conv1 = nn.Conv2d(
@@ -35,25 +36,105 @@ class SRCNN(nn.Module):
         return x
 
     def run_train(self, **kwargs):
-        sort_image()
-        proccess_image(const.DEFAULT_TRAIN_PATH)
+        # Define image paths and data directories
+        lr_image_dir = const.DEFAULT_LOW_RESOURCE_PATH
+        hr_image_dir = const.DEFAULT_HIGH_RESOURCE_PATH if kwargs.get(
+            "hr_image_dir") is None else kwargs["hr_image_dir"]
 
-        model = SRCNN()
+        # Create training and validation datasets
+        train_data = SRDataset(lr_image_dir, hr_image_dir,
+                               scale=const.DEFAULT_SCALE)
+        val_data = SRDataset(lr_image_dir, hr_image_dir,
+                             scale=const.DEFAULT_SCALE)
+
+        # Create data loaders
+        train_loader = DataLoader(
+            train_data, batch_size=const.DEFAULT_BATCH_SIZE, shuffle=True)
+        val_loader = DataLoader(
+            val_data, batch_size=const.DEFAULT_BATCH_SIZE, shuffle=False)
+
+        # Move model to device
+        model = self.to(device=const.DEFAULT_DEVICE)
+
+        # Initialize optimizer and loss function
+        optimizer = torch.optim.Adam(
+            model.parameters(), lr=const.DEFAULT_LEARNING_RATE)
         criterion = nn.MSELoss()
-        optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
-        train_loader = data_loader(const.DEFAULT_TRAIN_PATH)
+        # Initialize training and validation loss lists
+        train_loss_list = []
+        val_loss_list = []
 
-        for epoch in range(const.DEFAULT_EPOCHS):  # 50 epochs
-            for batch in train_loader:
-                low_res_images, high_res_images = batch
+        # Create a writer for TensorBoard
+        writer = SummaryWriter()
 
-                # Forward pass
-                outputs = model(low_res_images)
-                loss = criterion(outputs, high_res_images)
+        for epoch in range(const.DEFAULT_EPOCHS):
+            print(f'Epoch {epoch+1}/{const.DEFAULT_EPOCHS}:', end=' ')
+            train_loss = 0
 
-                # Backward pass and optimization
+            # Training loop
+            for i, (low_image_resource, high_image_resource) in enumerate(train_loader):
+                # Move data to device
+                low_image_resource = low_image_resource.to(
+                    const.DEFAULT_DEVICE)
+                high_image_resource = high_image_resource.to(
+                    const.DEFAULT_DEVICE)
+
+                # Forward pass and calculate loss
+                outputs = model(low_image_resource)
+                loss = criterion(outputs, high_image_resource)
+
+                # Update model weights
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
-            print("Model in training, with args: {}".format(kwargs))
+
+                # Accumulate training loss
+                train_loss += loss.item()
+
+            # Evaluate model after each epoch
+            val_loss = self.eval(val_loader, criterion)
+
+            # Track and print epoch-wise losses and write to TensorBoard
+            train_loss_list.append(train_loss/len(train_loader))
+            val_loss_list.append(val_loss)
+            writer.add_scalar('Loss/Train', train_loss_list[-1], epoch)
+            writer.add_scalar('Loss/Val', val_loss_list[-1], epoch)
+            print(
+                f"Train Loss: {train_loss_list[-1]}, Val Loss: {val_loss_list[-1]}")
+
+        # Plot training and validation losses
+        plt.plot(range(1, const.DEFAULT_EPOCHS+1),
+                 train_loss_list, label="Train Loss")
+        plt.plot(range(1, const.DEFAULT_EPOCHS+1),
+                 val_loss_list, label="Validation Loss")
+        plt.legend()
+        plt.xlabel("Number of epochs")
+        plt.ylabel("Loss")
+        plt.show()
+
+    def eval(self, data_loader, criterion):
+
+        # Set model to evaluation mode
+        self.eval()
+        model = self.to(device=const.DEFAULT_DEVICE)
+
+        total_loss = 0
+        total_psnr = 0
+        for i, (low_image_resource, high_image_resource) in enumerate(data_loader):
+            # Move data to device
+            low_image_resource = low_image_resource.to(const.DEFAULT_DEVICE)
+            high_image_resource = high_image_resource.to(const.DEFAULT_DEVICE)
+
+            # Forward pass and calculate loss
+            outputs = model(low_image_resource)
+            loss = criterion(outputs, high_image_resource)
+            psnr = calculate_psnr(outputs, high_image_resource)
+
+            # Accumulate total loss
+            total_loss += loss.item()
+            total_psnr += psnr.item()
+        # Calculate and return average loss
+        avg_loss = total_loss / len(data_loader)
+        avg_psnr = total_psnr / len(data_loader)
+        return avg_loss, avg_psnr
