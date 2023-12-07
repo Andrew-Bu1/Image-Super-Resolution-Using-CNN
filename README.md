@@ -2,6 +2,11 @@
 
 ## Step 1: Prepare the dataset
 DIV2K
+Set5
+Set14
+Urban100
+BSDS100
+Manga109
 
 
 ## Step 2: Train the model
